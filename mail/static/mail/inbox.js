@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-  function compose_email() {
+  function compose_email(reply, replySubject, replyTo, newBody) {
 
     // Select and input from user
     const submit = document.querySelector('#submit');
@@ -24,12 +24,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show compose view and hide other views
     document.querySelector('#emails-view').style.display = 'none';
+    document.querySelector('#email-view').style.display = 'none';
     document.querySelector('#compose-view').style.display = 'block';
 
-    // Clear out composition fields
-    recipient.value = '';
-    subject.value = '';
-    body.value = '';
+    // check if user reply to other email and pre-fill the form fields
+    if (reply !== undefined) {
+        subject.value = replySubject;
+        recipient.value = replyTo;
+        body.value = newBody;
+    }
+    else {
+        // Clear out composition fields
+        subject.value = '';
+        recipient.value = '';
+        body.value = '';
+    }
+
     submit.disabled = true;
 
     // Listen for input to be typed into the input field
@@ -41,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
             submit.disabled = true;
         }
     }
-
   }
 
 
@@ -115,7 +124,6 @@ function load_mailbox(mailbox, message = "") {
     .catch(error => {
         console.log('Error:', error);
     });
-
 }
 
 
@@ -156,30 +164,39 @@ function list_emails(email, mailbox) {
     // append the mail info to div container
     emailContainer.append(sender, subject, timestamp);
 
-    /* on mouse over change the cursor to pointer
-       remove the timestamp and add archive button
-    */
+    // on mouse over, set the cursor to pointer
     emailContainer.onmouseover = () => {
         emailContainer.style = "cursor: pointer";
-        timestamp.remove();
-        // set the button to be archive or unarchive
-        let buttonText = set_archive_button(email);
-        archiveBtn.innerHTML = buttonText;
-        // append the button to the container
-        emailContainer.append(archiveBtn);
-
-        // on click archive or unarchive email
-        archiveBtn.onclick = () => {
-            archive_email(email);
-            // set var true to prevent opening the mail
-            clicked_archive = true;
-        }
     }
 
-    // on mouse out remove the button and display the timestamp
-    emailContainer.onmouseout = () => {
-        archiveBtn.remove();
-        emailContainer.append(timestamp);
+    // check if mailbox inbox or archive
+    if (mailbox === "inbox" || mailbox === "archive"){
+
+        /* on mouse over change the cursor to pointer
+               remove the timestamp and add archive button
+            */
+            emailContainer.onmouseover = () => {
+                emailContainer.style = "cursor: pointer";
+                timestamp.remove();
+                // set the button to be archive or unarchive
+                let buttonText = set_archive_button(email);
+                archiveBtn.innerHTML = buttonText;
+                // append the button to the container
+                emailContainer.append(archiveBtn);
+
+                // on click archive or unarchive email
+                archiveBtn.onclick = () => {
+                    archive_email(email);
+                    // set var true to prevent opening the mail
+                    clicked_archive = true;
+                }
+            }
+            // on mouse out remove the button and display the timestamp
+            emailContainer.onmouseout = () => {
+                archiveBtn.remove();
+                emailContainer.append(timestamp);
+            }
+
     }
 
     emailsView.append(emailContainer);
@@ -192,8 +209,6 @@ function list_emails(email, mailbox) {
             email_view(email);
         }
     }
-
-
 }
 
 
@@ -244,6 +259,24 @@ function email_view(email) {
           read: true
       })
     })
+
+    /* on click set reply to true
+       call the function compose_email with the optional parameters
+    */
+    replyBtn.onclick = () => {
+        let reply = true;
+        //replyDate = new Date().toLocaleString();
+        // check if subject already starts with RE*
+        if (subject.innerHTML.includes("RE:")) {
+            subject.innerHTML = `${email.subject}`;
+        }
+        else {
+            subject.innerHTML = `RE: ${email.subject}`;
+        }
+        from.innerHTML = `${email.sender}`;
+        newBody = `On ${email.timestamp}, ${email.sender} wrote: ${body.innerHTML}`
+        compose_email(reply, subject.innerHTML, from.innerHTML, newBody);
+    }
 }
 
 
@@ -283,8 +316,6 @@ function archive_email(email) {
               archived: true
           })
         });
-        window.location.reload();
-        load_mailbox('inbox');
     }
     else {
         fetch(`/emails/${email.id}`, {
@@ -293,7 +324,7 @@ function archive_email(email) {
               archived: false
           })
         });
-        window.location.reload();
-        load_mailbox('archived');
     }
+    // reload the page
+    window.location.reload();
 }
