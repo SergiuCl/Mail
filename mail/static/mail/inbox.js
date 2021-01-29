@@ -265,7 +265,6 @@ function email_view(email) {
     */
     replyBtn.onclick = () => {
         let reply = true;
-        //replyDate = new Date().toLocaleString();
         // check if subject already starts with RE*
         if (subject.innerHTML.includes("RE:")) {
             subject.innerHTML = `${email.subject}`;
