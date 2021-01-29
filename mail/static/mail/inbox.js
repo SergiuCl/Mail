@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
-  document.querySelector('#compose').addEventListener('click', compose_email);
+  document.querySelector('#compose').addEventListener('click', () => compose_email());
 
   // Add event listener for the form
   document.querySelector('#compose-form').addEventListener('submit', send_email);
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-  function compose_email(reply, replySubject, replyTo, newBody) {
+  function compose_email(replySubject, replyTo, newBody) {
 
     // Select and input from user
     const submit = document.querySelector('#submit');
@@ -27,18 +27,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#email-view').style.display = 'none';
     document.querySelector('#compose-view').style.display = 'block';
 
+    // Clear out composition fields
+    subject.value = '';
+    recipient.value = '';
+    body.value = '';
+
     // check if user reply to other email and pre-fill the form fields
-    if (reply !== undefined) {
+    if (replySubject.length !== 0) {
         subject.value = replySubject;
         recipient.value = replyTo;
         body.value = newBody;
     }
-    else {
-        // Clear out composition fields
-        subject.value = '';
-        recipient.value = '';
-        body.value = '';
-    }
+
 
     submit.disabled = true;
 
@@ -264,7 +264,6 @@ function email_view(email) {
        call the function compose_email with the optional parameters
     */
     replyBtn.onclick = () => {
-        let reply = true;
         // check if subject already starts with RE*
         if (subject.innerHTML.includes("RE:")) {
             subject.innerHTML = `${email.subject}`;
@@ -274,7 +273,8 @@ function email_view(email) {
         }
         from.innerHTML = `${email.sender}`;
         newBody = `On ${email.timestamp}, ${email.sender} wrote: ${body.innerHTML}`
-        compose_email(reply, subject.innerHTML, from.innerHTML, newBody);
+        // call the function compose with the pre filled fields
+        compose_email(subject.innerHTML, from.innerHTML, newBody);
     }
 }
 
